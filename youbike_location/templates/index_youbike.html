@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- leaflet css -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- 自訂 css -->
+    <style>
+        table,
+        thead,
+        th,
+        tbody,
+        tr,
+        td {
+            border: 1px solid;
+        }
+
+        #map {
+            height: 480px;
+        }
+    </style>
+
+
+
+
+
+</head>
+
+<body>
+    <button id="btn_request">取得Youbike站列表</button>
+    <div id="map"></div>
+    <table>
+        <thead>
+            <tr>
+                <th>站點代號</th>
+                <th>場站中文名稱</th>
+                <th>場站總停車格</th>
+                <th>目前車輛數量</th>
+                <th>空位數量</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+
+
+    <!-- leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        var map = L.map('map').setView([25.033913, 121.5434129], 13);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+
+        //設定圖層群組
+        let layerGroup = null;
+        let arrMarkers = [];
+
+
+
+        // 案鳥事件，取得Web API的回傳資料
+        document.querySelector('button#btn_request').addEventListener('click', function (event) {
+            fetch('http://127.0.0.1:5000/youbike_taipei', {
+                method: "GET"
+            }).then(function (response) {
+                return response.json();
+            }).then(function (arr) {
+                // 刪除先前的 markers
+                if (layerGroup != null && map.hasLayer(layerGroup)) {
+                    layerGroup.clearLayers();
+                    map.removeLayer(layerGroup);
+
+                    // 變數初始化
+                    layerGroup = null;
+                    arrLayers = [];
+                }
+
+                // 取得 tbody 元素
+                let tbody = document.querySelector('table > tbody')
+
+                // 清空 tbody 底下既有的元素，如 tr, td 等
+                tbody.innerHTML = "";
+
+                // 將回傳的資料動態生成在網頁上
+                for (let o of arr) {
+                    // 輸出對應的 html tag
+                    let tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${o['sno']}</td>
+                                    <td>${o['sna']}</td>
+                                    <td>${o['total']}</td>
+                                    <td>${o['available_rent_bikes']}</td>
+                                    <td>${o['available_return_bikes']}</td>`;
+                    tbody.appendChild(tr);
+
+                    // 建立 markers
+                    let marker = L.marker([o['latitude'], o['longitude']])
+                        .bindPopup(`${o['sna']}<br>
+                                    目前車輛數量: ${o['available_rent_bikes']}<br>
+                                    空位數量: ${o['available_return_bikes']}`);
+
+                    marker.addEventListener('click', function (event) {
+                        console.log(o)
+                    })
+
+                    // 將 markers 放到陣列 arrMarkers 中
+                    arrMarkers.push(marker);
+                }
+
+                // 迴圈完畢後，將 arrMarkers 放到 layerGroup 中
+                layerGroup = L.layerGroup(arrMarkers);
+
+                // 將 laygroup 放到 map 中
+                layerGroup.addTo(map);
+
+
+            });
+        });
+
+
+    </script>
+
+</body>
+
+</html>
