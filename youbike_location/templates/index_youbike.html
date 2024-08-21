@@ -107,7 +107,8 @@
                     let marker = L.marker([o['latitude'], o['longitude']])
                         .bindPopup(`${o['sna']}<br>
                                     目前車輛數量: ${o['available_rent_bikes']}<br>
-                                    空位數量: ${o['available_return_bikes']}`);
+                                    空位數量: ${o['available_return_bikes']}<br>
+                                    最後最後更新時間: ${o['infoTime']}`);
 
                     marker.addEventListener('click', function (event) {
                         console.log(o)
